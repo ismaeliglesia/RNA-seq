@@ -1,6 +1,6 @@
 #!/bin/bash
 
-####TFM Pipeline - Ismael de la Iglesia San Sebastián (MUBBC, UAM)
+####TFM Pipeline - Ismael de la Iglesia San SebastiÃ¡n (MUBBC, UAM)
 
 ##1. Preparing input files for RNA-Seq indexing with STAR:
 #The importance of preparing the metadata in the best way possible is fundamental for a correct quantification of #STAR algorithm. Indexing is needed just once. 
@@ -126,7 +126,7 @@ paste l1 l2 | while read R1 R2 ;
     --alignEndsProtrude 20 ConcordantPair \
     --alignSJstitchMismatchNmax 5 -1 5 5 \
     --chimMultimapScoreRange 3 \
-    --chimScoreJunctionNonGTAG -4 �\
+    --chimScoreJunctionNonGTAG -4 Â\
     --chimMultimapNmax 20 \
     --chimNonchimScoreDropMin 10 \
     --chimMainSegmentMultNmax 1 \
@@ -148,5 +148,5 @@ paste l1 l2 | while read R1 R2 ;
 done
 
 ## 4. Rscript
-Rscript DESeq_enrichR.R
+Rscript ./DESeq_enrichR.R
 
