@@ -1,0 +1,152 @@
+#!/bin/bash
+
+####TFM Pipeline - Ismael de la Iglesia San SebastiÃ¡n (MUBBC, UAM)
+
+##1. Preparing input files for RNA-Seq indexing with STAR:
+#The importance of preparing the metadata in the best way possible is fundamental for a correct quantification of #STAR algorithm. Indexing is needed just once. 
+home=$( pwd )
+
+NTHREADS=16
+mkdir -p star_index/hg38/SJ_out
+mkdir -p star_index/hg38/genome
+cd ./star_index/hg38/genome
+wget https://ftp.ensembl.org/pub/release-108/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+gunzip *
+cd ..
+mkdir -p ./annotation
+cd annotation
+wget http://ftp.ensembl.org/pub/release-106/gtf/homo_sapiens/Homo_sapiens.GRCh38.106.gtf.gz
+gunzip *
+cd .. 
+
+############# Run just one time
+STAR --runMode genomeGenerate --genomeDir . --genomeFastaFiles ./genome/* --sjdbGTFfile ./annotation/* --runThreadN $NTHREADS
+
+
+############# Different lanes were used to each sample sequencing, thus merging fastq.gz is needed.
+ls -1 *R1*.gz | awk -F 'L' '{print $1}' | sort | uniq > ID
+for i in `cat ./ID`;
+do
+ echo -e "-- Merging "${i}"R1"
+ cat ${i}L001_R1_001.fastq.gz ${i}L002_R1_001.fastq.gz > ${i}L001_R1_001_merged.fastq.gz
+ rm ${i}L001_R1_001.fastq.gz ${i}L002_R1_001.fastq.gz
+done
+
+for i in `cat ./ID`;
+do
+ echo -e "-- Merging "${i}"R2"
+ cat ${i}L001_R2_001.fastq.gz ${i}L002_R2_001.fastq.gz > ${i}L001_R2_001_merged.fastq.gz
+ rm ${i}L001_R2_001.fastq.gz ${i}L002_R2_001.fastq.gz
+done
+
+
+##2. FASTQ quality control with FASTQC
+cd $home
+mkdir -p ./RESULTS/fastqc-pre
+
+fastqc *_merged.fastq.gz -t $NTHREADS -q -o ./RESULTS/fastqc-pre
+echo 'FASTQC has been performed, including them in a single html...'
+multiqc ./RESULTS/fastqc-pre -o ./RESULTS/fastqc-pre --title 'RNA-Seq QC (pre-trimming)'
+
+#3. Quality could be improved in this samples so trim_galore will be run to increase quality and reduce adapter contamination
+mkdir RESULTS/trimmedseq
+find ./*_R1_001_merged.fastq.gz > l1
+find ./*_R2_001_merged.fastq.gz > l2
+l1=$(cat l1)
+l2=$(cat l2)
+paste l1 l2 | while read R1 R2
+do
+	echo -e "Trimming "${R1}" and "${R2}"."#
+	echo $R2
+    	trim_galore ${R1} ${R2} --paired -j $NTHREADS --length 15 -o ./RESULTS/trimmedseq
+done 
+cd RESULTS/trimmedseq
+rename 's/_val_1.fq.gz/.fastq.gz/' *.fq.gz
+rename 's/_val_2.fq.gz/.fastq.gz/' *.fq.gz
+rm *_report.txt
+cd $home
+mkdir ./RESULTS/fastqc-post
+cd ./RESULTS/trimmedseq
+fastqc *_merged.fastq.gz -t $NTHREADS -q -o ${home}/RESULTS/fastqc-post
+cd $home
+echo 'FASTQC has been performed, including them in a single html...'
+multiqc ./RESULTS/fastqc-post -o ./RESULTS/fastqc-post --title 'RNA-Seq QC (post-trimming)'
+
+##4. Now, mapping with STAR is going to be performed:
+mkdir ./RESULTS/STAR
+find ./RESULTS/trimmedseq/*_R1_001_merged.fastq.gz > l1
+find ./RESULTS/trimmedseq/*_R2_001_merged.fastq.gz > l2
+l1=$(cat l1)
+l2=$(cat l2)
+
+
+######### 1-passing
+paste l1 l2 | while read R1 R2 ;
+  do
+    echo -e "--Input are:\t""${R1}"",""${R2}" ;
+    outdir=$(echo "${R2}" | cut -f4 -d"/" | cut -f1 -d"_") ;
+    STAR --runThreadN $NTHREADS \
+    --genomeDir ./star_index/hg38 \
+    --readFilesIn $R1 $R2 \
+    --readFilesCommand zcat \
+    --outSAMtype None \
+    --sjdbGTFfile ./star_index/hg38/annotation/* \
+    --limitOutSJcollapsed 5000000 \
+    --outFileNamePrefix "RESULTS/STAR/""${outdir}_" ;
+   echo "--Done." ;
+done
+
+cd ./RESULTS/STAR/
+cat *.tab | awk '($5 > 0 && $7 > 2 && $6==0)' | cut -f1-6 | sort | uniq > ./SJ_out_total.tab
+echo "$( wc -l SJ_out_total.tab ) junctions remained" 
+cd $home
+
+########## Index generation for 2-pass, improving sensitivit
+STAR --runMode genomeGenerate --genomeDir ./star_index/hg38/SJ_index --genomeFastaFiles ./star_index/hg38/genome/* --sjdbGTFfile ./star_index/hg38/annotation/* --sjdbFileChrStartEnd ./RESULTS/STAR/SJ_out_total.tab
+
+
+######### 2-Passing
+mkdir ./RESULTS/STAR_final
+paste l1 l2 | while read R1 R2 ;
+  do
+    echo -e "--Input are:\t""${R1}"",""${R2}" ;
+    outdir=$(echo "${R2}" | cut -f4 -d"/" | cut -f1 -d"_") ;
+    STAR --runThreadN $NTHREADS \
+    --genomeDir ./star_index/hg38/SJ_index \
+    --readFilesIn $R1 $R2 \
+    --readFilesCommand zcat \
+    --outSAMtype BAM SortedByCoordinate \
+    --sjdbGTFfile ./star_index/hg38/annotation/* \
+    --chimSegmentMin 12 \
+    --chimJunctionOverhangMin 8 \
+    --chimOutJunctionFormat 1 \
+    --alignMatesGapMax 1000000 \
+    --alignIntronMax 1000000 \
+    --alignSJDBoverhangMin 10 \
+    --alignEndsProtrude 20 ConcordantPair \
+    --alignSJstitchMismatchNmax 5 -1 5 5 \
+    --chimMultimapScoreRange 3 \
+    --chimScoreJunctionNonGTAG -4 Â\
+    --chimMultimapNmax 20 \
+    --chimNonchimScoreDropMin 10 \
+    --chimMainSegmentMultNmax 1 \
+    --peOverlapNbasesMin 12 \
+    --peOverlapMMp 0.1 \
+    --alignSplicedMateMapLminOverLmate 0 \
+    --alignSplicedMateMapLmin 30 \
+    --quantMode GeneCounts \
+    --outFilterMultimapNmax 20 \
+    --outFilterMismatchNmax 100 \
+    --outFilterScoreMinOverLread 0.25 \
+    --outFilterMatchNminOverLread 0.25 \
+    --limitOutSJcollapsed 50000000 \
+    --outFileNamePrefix "RESULTS/STAR_final_2/""${outdir}_" ;
+   echo "--Done." ;
+   cd ./RESULTS/STAR_final_2 
+   #smbclient '\\192.168.221.69/User' -U admin%NASGT2021pw -c 'put "./'${outdir}'_Aligned.sortedByCoord.out.bam"'  #Samba client is used for .bam saving
+   cd $home
+done
+
+## 4. Rscript
+Rscript DESeq_enrichR.R
+
