@@ -28,7 +28,7 @@ library('xtable')
 library('stargazer')
 library('org.Hs.eg.db')
 
-setwd("~/Escritorio/RESULTS/CART14")
+getwd()
 metadata <- as.data.frame(read_csv('metadata_deseq.csv'))
 #metadata <- metadata[-c(3,7),]
 path <- list.files(".", pattern = "*_ReadsPerGene.out.tab")
@@ -167,28 +167,22 @@ if (websiteLive) head(dbs)
 dbs <- c("Transcription_Factor_PPIs", "BioCarta_2016",
          "Human_Gene_Atlas", "Pfam_InterPro_Domains", "Reactome_2016",
          "NCI-Nature_2016", "Panther_2016", "GO_Molecular_Function_2018", 
-         "GO_Biological_Process_2018", "TRANSFAC_and_JASPAR_PWMs")
+         "GO_Biological_Process_2018")
 if (websiteLive) {
   enriched <- enrichr(mygenes[,1], dbs)
 }
 
 
 
-if (websiteLive) enriched[["Transcription_Factor_PPIs"]] ### Los receptores de estrogenos ESR1-2 NO son fundamentales para el desarrollo T, sin embargo participa en la inflamaciñon mediada por célula T (en concreto Th1 y Th17, su underexpression reduce IFNgamma y reduce la act de células T). Asimismo ESR1 underxpression mejora la supervivencia celular al reducir la apoptosis mediadada por la activación de ceulas T. SU UNDEREXPRESSION REDUCE LA PROLIFERACION Y EXPANSIÓN de T cel
-### ILF2-3 (Interleukin enhancer-binding factor 2) participan en procesos celulares como la replicación del ADN, reparación, estabilización del mRNA, inhibicion de transcripción y sintesis de miRNA. Están altamente relacionadas con las vias MAPK y PI3K. Sin ILF2 disminuye proliferación y aumenta apoptosis (overexpression al revés)
-### TCF3 (EA2) mantiene el estado de doble positiva a las células T (estado de desarrollo) mientras que la presencia de RUNX hace que se desarrollen a CD8. Una overexpression de RUNX3 se ve en rec (por tanto +CD8 en prog que no prog)
-### SMAD2 regula la síntesis de TGFB, regulando la proliferation, apoptosis y diferenciacion celular. En concreto aumenta las Treg que suponen que en overexpresion las cñelulas CART supriman su respuesta.
-### NFKB aumenta supervivencia y la producción de citoquinas proinflamatorias.
-### Downregulación de SMAD4 empeora la función T en autoimunidad y antitumoral.
-if (websiteLive) enriched[["BioCarta_2016"]] ### Las paths que han sido significativas se relacionan con la activación de células T y su señalización por TCR. Asimismo, otros genes hacen overlaping con la apoptosis mediada MEF2D.
-if (websiteLive) enriched[["Human_Gene_Atlas"]] ### Son células CD4 y CD8. 
-if (websiteLive) enriched[["Pfam_InterPro_Domains"]] ### De aquí se observa que muchas proteínas de las overexpressed en recaida modulan union a RNA. 
-if (websiteLive) enriched[["Reactome_2016"]] ### Se ven terminos significativos sobre la traducción, presentación de antigenos MHCI, señalización TCR, procesamiento y presentación antiǵenica, paths de señalización de TCR (incluyendo fosforilación TCRtheta), 
-if (websiteLive) enriched[["NCI-Nature_2016"]] ### Significativa la señalización TCR en CD8 y CD4, así como señalización RhoA (act cél T) y TGFB
-if (websiteLive) enriched[["Panther_2016"]] ### Significativo la activación de células T
-if (websiteLive) enriched[["GO_Molecular_Function_2018"]] ### La mayor parte de los terminos hace referencia a la unión de prot-mRNA y a la ubiquitinación
-if (websiteLive) enriched[["GO_Biological_Process_2018"]] ### Terminos de presentación de anígenos, ribosómicos, presentación antigénica, splicing, señalización de receptor de células T y reg. del sistema inmune.
-
+if (websiteLive) enriched[["Transcription_Factor_PPIs"]] 
+if (websiteLive) enriched[["BioCarta_2016"]] 
+if (websiteLive) enriched[["Human_Gene_Atlas"]]
+if (websiteLive) enriched[["Pfam_InterPro_Domains"]]
+if (websiteLive) enriched[["Reactome_2016"]]  
+if (websiteLive) enriched[["NCI-Nature_2016"]] 
+if (websiteLive) enriched[["Panther_2016"]] 
+if (websiteLive) enriched[["GO_Molecular_Function_2018"]] 
+if (websiteLive) enriched[["GO_Biological_Process_2018"]] 
 ##### HACER TABLAS
 a <- as.data.table(enriched[2])[,c(1,2,4,9)]
 gtab <- gt(as.data.table(enriched[9])[,c(1,2,4,9)], auto_align = TRUE)
