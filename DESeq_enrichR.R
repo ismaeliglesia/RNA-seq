@@ -26,6 +26,7 @@ library('biomaRt')
 library('foreign')
 library('xtable')
 library('stargazer')
+library('org.Hs.eg.db')
 
 setwd("~/Escritorio/RESULTS/CART14")
 metadata <- as.data.frame(read_csv('metadata_deseq.csv'))
@@ -153,7 +154,6 @@ png(file='./pca.png')
 plot(pca)
 dev.off()
 
-
 ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 ENSGID <- row.names(resSig)
 mygenes <- getBM(attributes = 'external_gene_name', filters = 'ensembl_gene_id', values = ENSGID,
@@ -235,6 +235,8 @@ genes <- na.omit(resSig)
 
 resSig$symbol <- mapIds(org.Hs.eg.db, keys=row.names(resSig), column="SYMBOL", keytype="ENSEMBL", multiVals="first")
 results_gene_name <- as.data.frame(resSig)
+write.csv(as.data.frame(results_gene_name), './results_gene_name.csv')
+
 result_input_GO <- results_gene_name[c(2,6,7)]
 result_input_GO <- data.frame(result_input_GO$symbol, result_input_GO$padj)
 result_input_GO <- na.omit(result_input_GO)
