@@ -122,7 +122,7 @@ paste l1 l2 | while read R1 R2 ;
     --chimOutJunctionFormat 1 \
     --alignMatesGapMax 1000000 \
     --alignIntronMax 1000000 \
-    --alignSJDBoverhangMin 10 \
+    --alignSJDBoverhangMin 5 \
     --alignEndsProtrude 20 ConcordantPair \
     --alignSJstitchMismatchNmax 5 -1 5 5 \
     --chimMultimapScoreRange 3 \
