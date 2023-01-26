@@ -117,8 +117,8 @@ paste l1 l2 | while read R1 R2 ;
     --readFilesCommand zcat \
     --outSAMtype BAM SortedByCoordinate \
     --sjdbGTFfile ./star_index/hg38/annotation/* \
-    --chimSegmentMin 12 \
-    --chimJunctionOverhangMin 8 \
+    --chimSegmentMin 30 \
+    --chimJunctionOverhangMin 15 \
     --chimOutJunctionFormat 1 \
     --alignMatesGapMax 1000000 \
     --alignIntronMax 1000000 \
@@ -126,19 +126,16 @@ paste l1 l2 | while read R1 R2 ;
     --alignEndsProtrude 20 ConcordantPair \
     --alignSJstitchMismatchNmax 5 -1 5 5 \
     --chimMultimapScoreRange 3 \
-    --chimScoreJunctionNonGTAG -4 Â\
+    --chimScoreJunctionNonGTAG -4 \
     --chimMultimapNmax 20 \
     --chimNonchimScoreDropMin 10 \
     --chimMainSegmentMultNmax 1 \
-    --peOverlapNbasesMin 12 \
-    --peOverlapMMp 0.1 \
+    --chimOutType WithinBAM Junctions \
     --alignSplicedMateMapLminOverLmate 0 \
     --alignSplicedMateMapLmin 30 \
     --quantMode GeneCounts \
     --outFilterMultimapNmax 20 \
     --outFilterMismatchNmax 100 \
-    --outFilterScoreMinOverLread 0.25 \
-    --outFilterMatchNminOverLread 0.25 \
     --limitOutSJcollapsed 50000000 \
     --outFileNamePrefix "RESULTS/STAR_final_2/""${outdir}_" ;
    echo "--Done." ;
