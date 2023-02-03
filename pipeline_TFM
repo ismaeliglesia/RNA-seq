@@ -134,6 +134,8 @@ paste l1 l2 | while read R1 R2 ;
     --alignSplicedMateMapLminOverLmate 0 \
     --alignSplicedMateMapLmin 30 \
     --quantMode GeneCounts \
+    -outFilterScoreMinOverLread 0 \
+    --outFilterMatchNminOverLread 0 \
     --outFilterMultimapNmax 20 \
     --outFilterMismatchNmax 100 \
     --limitOutSJcollapsed 50000000 \
